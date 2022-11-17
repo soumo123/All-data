@@ -1,0 +1,147 @@
+controller ---------
+
+
+
+
+
+import Task from '#model/task.js';
+import Users from '#model/users.js';
+
+const createTask = async (req, reply) => {
+  try {
+    let doctor;
+    const user = await Users.find({ ak_id: req.body.ak_id })
+    user.map((ele) => {
+      doctor = ele._id
+    })
+    const { text, status } = req.body
+    let data = await Task.create({ text, status, doctor });
+
+    return reply.status(201).send({ message: 'Task created', data: data });
+  } catch (err) {
+    return reply.status(500).send({ message: `Error occur at ${err}` });
+  }
+}
+
+
+const getAllTask = async (req, reply) => {
+  try {
+    const tasks = await Task.find({ doctor: req.params.doctor })
+
+    return reply.status(200).send({ message: 'All Task Get By An Doctor', data: tasks });
+
+  } catch (err) {
+    return reply.status(500).send({ message: `Error occur at ${err}` });
+  }
+}
+
+
+const updateTask = async (req, reply) => {
+  try {
+    let newdata = { text: req.body.text };
+    const task = await Task.findByIdAndUpdate(req.params._id, newdata, {
+      new: true,
+      runValidators: true,
+      useFindAndModify: false
+    })
+
+    return reply.status(201).send({ message: 'Task Updated', data: task });
+  } catch (err) {
+    return reply.status(500).send({ message: `Error occur at ${err}` });
+  }
+}
+
+
+const deleteTask = async (req, reply) => {
+  try {
+    let result;
+    const task = await Task.find({_id:req.params._id})
+    console.log("task",task)
+    if (!task) {
+      return reply.status(400).send({ message: `Task not find` });
+    }
+
+    task.map((ele)=>{
+      result = ele
+    })
+    await result.remove()
+
+    return reply.status(200).send({ message: 'Task deleted' });
+  } catch (err) {
+    return reply.status(500).send({ message: `Error occur at ${err}` });
+  }
+}
+
+
+
+
+
+export { createTask, getAllTask, updateTask, deleteTask }
+
+
+
+
+
+
+
+
+
+
+route --------------->
+
+
+import { createTask ,getAllTask, updateTask,deleteTask} from '#controller/task.js';
+// import {jwtToken} from '#middlewares/jwt_token.js'
+
+export default async function (fastify, opts) {
+  fastify.post('/api/v2/intcda/createtask', createTask );
+  fastify.get('/api/v2/intcda/getalltask/:doctor', getAllTask );
+  fastify.put('/api/v2/intcda/updatetask/:_id', updateTask );
+  fastify.delete('/api/v2/intcda/deletetask/:_id', deleteTask );
+
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+db.getCollection(‘users’).find({“akdc_id”: “AKPT000001"})
+1:18
+Doctor login url
+1:18
+http://akdevapp.duckdns.org:40001/doctor/login
+1:18
+Patient login
+1:18
+http://akdevapp.duckdns.org:40001/login
+1:19
+Doctor user
+michael_jordan@gmail.com / Admin@123
+1:19
+Patient user
+AKPT000001
+1:22
+Mongo DB
+akdevapp.duckdns.org
+51001
