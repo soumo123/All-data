@@ -9,19 +9,51 @@ import Users from '#model/users.js';
 
 const createTask = async (req, reply) => {
   try {
-    let doctor;
-    const user = await Users.find({ ak_id: req.body.ak_id })
+    let doctor,org_id,role_id,resource_id_resource , resource_id_sharing;
+    const user = await Users.find({ doctor_id: req.body.doctor_id , akou_id: req.body.akou_id})
     user.map((ele) => {
-      doctor = ele._id
+      doctor = ele.doctor_id
+      org_id = ele.akou_id
     })
-    const { text, status } = req.body
-    let data = await Task.create({ text, status, doctor });
+    console.log(doctor,org_id)
+    let collection = 'user_roles_rel';
+    let query = `user_id=${doctor}`
+    let url1 = `http://akdevapp.duckdns.org:52203/api/v1/promsv2/${collection}?${query}`
+    const headers = {
+      "Authorization": "Bearer secret"
+    }
+    const result1 =  await call_api(url1,headers);
+    result1.map((res=>{
+      role_id = res.role_id 
+    }))
 
-    return reply.status(201).send({ message: 'Task created', data: data });
+    const url3 = `http://akdevapp.duckdns.org:52203/api/v1/promsv2/resources`
+    const result3 =  await call_api(url3,headers);
+    resource_id_resource = result3[result3.length-1].resource_id + 1
+    console.log("for resources",resource_id_resource);
+
+    // const url4 = `http://akdevapp.duckdns.org:52203/api/v1/promsv2/resource_sharing`
+    // const result4 =  await call_api(url4,headers);
+    // resource_id_sharing = result4[result4.length-1].resource_id + 1
+    // console.log("for resources_sharing",resource_id_sharing )
+
+    let header = req.headers;
+    let method = 'post';
+
+   let url = `http://akdevapp.duckdns.org:52203/api/v1/promsv2/resources` 
+   await call_api(url,header,method,{text:req.body.text,status:req.body.status,resource_id:resource_id_resource,resource_type:req.body.type});
+
+   let url2  = `http://akdevapp.duckdns.org:52203/api/v1/promsv2/resource_sharing`
+   const result2 =  await call_api(url2,header,method,{resource_id:resource_id_resource,type:req.body.type,role_id:role_id,permission:req.body.permission,org_id:org_id,ak_id:doctor});
+   console.log(result1)
+
+
+    return reply.status(201).send({ message: 'Task created', data: result2 });
   } catch (err) {
     return reply.status(500).send({ message: `Error occur at ${err}` });
   }
 }
+
 
 
 const getAllTask = async (req, reply) => {
@@ -54,17 +86,27 @@ const updateTask = async (req, reply) => {
 
 const deleteTask = async (req, reply) => {
   try {
-    let result;
-    const task = await Task.find({_id:req.params._id})
-    console.log("task",task)
-    if (!task) {
-      return reply.status(400).send({ message: `Task not find` });
+    // let result;
+    // const task = await Task.find({_id:req.params._id})
+    // if (!task) {
+    //   return reply.status(400).send({ message: `Task not find` });
+    // }
+    let resource_id = req.params.resource_id
+    const url = `http://akdevapp.duckdns.org:52203/api/v1/promsv2/resources?resource_id=${resource_id}`
+    const headers = {
+      "Authorization": "Bearer secret"
     }
+    let method = 'delete';
+    const result =  await call_api(url,headers,method);
 
-    task.map((ele)=>{
-      result = ele
-    })
-    await result.remove()
+
+    const url1 = `http://akdevapp.duckdns.org:52203/api/v1/promsv2/resource_sharing?resource_id=${resource_id}`
+    const result1 =  await call_api(url,headers,method);
+
+    // task.map((ele)=>{
+    //   result = ele
+    // })
+    // await result.remove()
 
     return reply.status(200).send({ message: 'Task deleted' });
   } catch (err) {
