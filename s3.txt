@@ -68,16 +68,31 @@ const getAllTask = async (req, reply) => {
 }
 
 
-const updateTask = async (req, reply) => {
+const updateAndCompleteTask = async (req, reply) => {
   try {
-    let newdata = { text: req.body.text };
-    const task = await Task.findByIdAndUpdate(req.params._id, newdata, {
-      new: true,
-      runValidators: true,
-      useFindAndModify: false
-    })
+    let id, text, status, resource_type;
+    let resource_id = req.params.resource_id
+    const date = new Date(Date.now()).toISOString()
+    console.log("ress_id", resource_id);
+    if (resource_id) {
+      let url = `http://akdevapp.duckdns.org:52203/api/v1/promsv2/resources?resource_id=${resource_id}`
+      const headers = {
+        "Authorization": "Bearer secret"
+      }
+      const result = await call_api(url, headers);
+      result.map((ele) => {
+        id = ele._id
+        status = ele.status,
+          resource_type = ele.resource_type
+      })
+      console.log("id", result)
+      let method = 'put';
+      let url1 = `http://akdevapp.duckdns.org:52203/api/v1/promsv2/resources/${id}`
+      const result1 = await call_api(url1, headers, method, { text: req.body.text, status: status, resource_type: resource_type, resource_id: resource_id, created_at: date, updated_at: date });
 
-    return reply.status(201).send({ message: 'Task Updated', data: task });
+      return reply.status(201).send({ message: 'Task updated', data: result1 });
+    } 
+
   } catch (err) {
     return reply.status(500).send({ message: `Error occur at ${err}` });
   }
