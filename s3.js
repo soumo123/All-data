@@ -582,3 +582,297 @@ const patientVists = async (req, reply) => {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const patientVists = async (req, reply) => {
+    let env = await hiddenData();
+    const crypto = new AkunahEncryption(env.decryptKey);
+    try {
+        let data = [];
+        let followup = [];
+        let all_resource_id = [];
+        let all_org_ids = []
+        let all_doctor_ids = []
+        let all_types = []
+        let initial_org_name;
+        let initial_type_name;
+        let initial_doctor_name;
+        let resource_id;
+        let ak_id = req.params.ak_id
+        
+        let collection = collections.Resource_sharing;
+        let queryFilter = `ak_id=${ak_id}`
+        const result = await getDocument({collection,queryFilter})
+        
+        
+    
+        for(let i = 0; i < result.document.length; i++) {
+            resource_id = result.document[i].resource_id  
+            console.log("resource_id",resource_id)
+            
+            let collection = collections.Resources;
+            let queryFilter = `resource_id=${resource_id}`
+            let response3 =  await getDocument({collection,queryFilter})
+
+            if(response3.document[0].initial_assessment=== 1 || !('initial_assessment' in response3.document[0])){
+
+                console.log("enter")
+                collection = collections.User_organisations;
+                queryFilter = `akou_id=${result.document[i].org_id}`
+               if(result.document[i].org_id==null){
+                break
+               }
+   
+               let response1 = await getDocument({collection,queryFilter})
+         
+               result.document[i].org_name = crypto.decrypt(response1.document[0].org_name)
+              
+               
+               collection = collections.Resource_sharing
+               queryFilter = `resource_id=${result.document[i].resource_id}&ak_id__co=DC`
+               let response2 = await getDocument({collection,queryFilter})
+   
+               let doctor_id = response2.document[0].ak_id
+              
+   
+               let doctor_name = await AllDBServices.MemDBServices.getUser({ak_id: doctor_id})
+              
+               doctor_name = `Dr. ${doctor_name.data.firstname} ${doctor_name.data.lastname}`
+              
+
+               result.document[i].doctor_name  = doctor_name;
+   
+               collection = collections.Resource_types
+               queryFilter = `type_id=${result.document[i].type}`
+               let resource_type = await getDocument({collection,queryFilter})
+               let type_name = resource_type.document[0].name
+              
+               result.document[i].type_name  = type_name
+               console.log("type_name", type_name)
+   
+               data.push({
+                   organization_name:`${result.document[i].org_name}`,
+                   doctor_name:`${result.document[i].doctor_name}`,
+                   resource_type:`${result.document[i].type_name}`,
+                   resource_id:resource_id,
+                   createdAt:`${result.document[i].created_at}`,
+                   followup:followup
+               })
+            }else{
+ 
+                collection = collections.Resources;
+                queryFilter = `resource_id=${resource_id}`
+                let response7 =  await getDocument({collection,queryFilter})
+
+                console.log("response7",response7)
+
+                console.log("2nd endteter")
+                collection = collections.User_organisations;
+                queryFilter = `akou_id=${result.document[i].org_id}`
+               if(result.document[i].org_id==null){
+                break
+               }
+   
+               let response1 = await getDocument({collection,queryFilter})
+         
+               result.document[i].org_name = crypto.decrypt(response1.document[0].org_name)
+              
+               
+               collection = collections.Resource_sharing
+               queryFilter = `resource_id=${response7.document[0].parent_resource_form_id}&ak_id__co=DC`
+               let response2 = await getDocument({collection,queryFilter})
+   
+               console.log("response 2",response2)
+
+
+               if(response2.document.length ==0){
+                continue
+               }
+               let doctor_id = response2.document[0].ak_id
+              
+   
+               let doctor_name = await AllDBServices.MemDBServices.getUser({ak_id: doctor_id})
+              
+               doctor_name = `Dr. ${doctor_name.data.firstname} ${doctor_name.data.lastname}`
+              
+
+               result.document[i].doctor_name  = doctor_name;
+   
+               collection = collections.Resource_types
+               queryFilter = `type_id=${result.document[i].type}`
+               let resource_type = await getDocument({collection,queryFilter})
+               let type_name = resource_type.document[0].name
+              
+               result.document[i].type_name  = type_name
+               console.log("type_name", type_name)
+   
+               followup.push({
+                   organization_name:`${result.document[i].org_name}`,
+                   doctor_name:`${result.document[i].doctor_name}`,
+                   resource_type:`${result.document[i].type_name}`,
+                   resource_id:resource_id,
+                   createdAt:`${result.document[i].created_at}`,
+                   followup:followup
+               })
+            }
+  
+        }
+        
+        reply.status(200).send({ message: `Patient Visits data : `, data:data });
+  
+    } catch (error) {
+        reply.status(500).send({ message: `Error occur at ${error.stack}` });
+    }
+  };
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  const patientVists = async (req, reply) => {
+    let env = await hiddenData();
+    const crypto = new AkunahEncryption(env.decryptKey);
+
+    try {
+        let data = [];
+        let followup = [];
+        let all_resource_id = [];
+        let all_org_ids = []
+        let all_doctor_ids = []
+        let all_types = []
+        let initial_org_name;
+        let initial_type_name;
+        let initial_doctor_name;
+        let resource_id;
+        let ak_id = req.params.ak_id
+
+        let collection = collections.Resource_sharing;
+        let queryFilter = `ak_id=${ak_id}`
+        const result = await getDocument({ collection, queryFilter })
+
+
+
+        for (let i = 0; i < result.document.length; i++) {
+            resource_id = result.document[i].resource_id
+
+            collection = collections.User_organisations;
+            queryFilter = `akou_id=${result.document[i].org_id}`
+
+            if (result.document[i].org_id == null) {
+                break
+            }
+
+            let response1 = await getDocument({ collection, queryFilter })
+
+
+
+            result.document[i].org_name = crypto.decrypt(response1.document[0].org_name)
+
+
+
+
+            collection = collections.Resource_sharing
+            queryFilter = `resource_id=${result.document[i].resource_id}&ak_id__co=DC`
+            let response2 = await getDocument({ collection, queryFilter })
+
+            if (response2.document.length === 0) {
+                continue
+            }
+
+
+            let doctor_id = response2.document[0].ak_id
+
+
+
+
+
+
+            let doctor_name = await AllDBServices.MemDBServices.getUser({ ak_id: doctor_id })
+
+            doctor_name = `Dr. ${doctor_name.data.firstname} ${doctor_name.data.lastname}`
+
+
+
+
+            result.document[i].doctor_name = doctor_name;
+
+            collection = collections.Resource_types
+            queryFilter = `type_id=${result.document[i].type}`
+            let resource_type = await getDocument({ collection, queryFilter })
+            let type_name = resource_type.document[0].name
+
+
+
+            result.document[i].type_name = type_name
+            console.log("type_name", type_name)
+
+            data.push({
+                organization_name: `${result.document[i].org_name}`,
+                doctor_name: `${result.document[i].doctor_name}`,
+                resource_type: `${result.document[i].type_name}`,
+                resource_id: resource_id,
+                createdAt: `${result.document[i].created_at}`,
+                followup: followup
+            })
+        }
+
+
+
+        reply.status(200).send({ message: `Patient Visits data : `, data: data });
+
+    } catch (error) {
+        reply.status(500).send({ message: `Error occur at ${error.stack}` });
+    }
+};
